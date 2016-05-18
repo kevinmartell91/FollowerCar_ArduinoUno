@@ -8,16 +8,19 @@
 #include <Wire.h>  
 
 
-void MadgwickQuaternion::MadgwickQuaternion()
+MadgwickQuaternion::MadgwickQuaternion()
 {
 	deltat = 0.0f;        // integration interval for both filter schemes
-	q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
+	//q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
+	q[0] = 1.0f;
+	q[1] = 0.0f;
+	q[2] = 0.0f;
+	q[3] = 0.0f;	
 }
 
 void MadgwickQuaternion::calculateMadgwickQuaternionValues(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 {
 	MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  mx,  my,  mz);
-
 	// Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
 	// In this coordinate system, the positive z-axis is down toward Earth. 
 	// Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.

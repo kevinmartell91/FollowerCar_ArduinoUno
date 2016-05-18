@@ -13,6 +13,7 @@ class MadgwickQuaternion
   public:
       MadgwickQuaternion();
       void calculateMadgwickQuaternionValues(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
+      void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
       float getPitch();
       float getYaw();
       float getRoll();
