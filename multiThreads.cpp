@@ -5,6 +5,7 @@
 #include "Gyroscope.h"
 #include "Magnetometer.h"
 #include "BarometricPressure.h"
+#include "MadgwickQuaternion.h"
 
 // ThreadController that will controll all threads of sensors
 ThreadController controll = ThreadController();
@@ -14,6 +15,7 @@ Thread* accelerometroThread = new Thread();
 Thread* gyroscopeThread = new Thread();
 Thread* magnetometerThread =  new Thread();
 Thread* barometricPressureThread = new Thread();
+Thread* madgwickQuaternionThread = new Thread();
 
 // Instances of Sensors
 Accelerometer* accelerometer = new Accelerometer();
@@ -21,6 +23,8 @@ Gyroscope* gyroscope = new Gyroscope();
 Magnetometer* magnetometer = new Magnetometer();
 BarometricPressure* barometricPressure =  new BarometricPressure();
 
+// Intance of madgwick algorithm
+MadgwickQuaternion* madgwickQuaternion = new MadgwickQuaternion();
 
 
 // callback for myThread
@@ -40,7 +44,32 @@ void magnetometerCallback(){
 }
 
 void barometricPressureCallback(){
+
   barometricPressure->calculateBarometricPressureValues();
+
+}
+
+void madgwickQuaternionCallback(){
+  madgwickQuaternion->calculateMadgwickQuaternionValues(
+    accelerometer->getX(),
+    accelerometer->getY(),
+    accelerometer->getZ(),
+    gyroscope->getX(),
+    gyroscope->getY(),
+    gyroscope->getZ(),
+    magnetometer->getX(),
+    magnetometer->getY(),
+    magnetometer->getZ()
+  );
+
+  //Serial.println("===========  madgwick filter  =========");
+  Serial.print("MadgwickQuaternion ( ");
+  Serial.print(madgwickQuaternion->getPitch()); Serial.print(" , ");
+  Serial.print(madgwickQuaternion->getYaw()); Serial.print(" , ");
+  Serial.print(madgwickQuaternion->getRoll()); Serial.print(" ).");
+  Serial.println();
+  Serial.println("-----------------------------------------");
+
 }
 
 // callback for hisThread
@@ -124,11 +153,17 @@ void setup(){
   allSensorResultsThread->onRun(allSensorResultsCallback);
   allSensorResultsThread->setInterval(500);
 
+  // Configurate Madgwick algorithm
+  madgwickQuaternionThread->onRun(madgwickQuaternionCallback);
+  madgwickQuaternionThread->setInterval(500);
+
+
   // Adds both threads to the sensor controllers of threads
   controll.add(accelerometroThread);
   controll.add(gyroscopeThread); // & to pass the pointer to it
   controll.add(magnetometerThread);
   controll.add(barometricPressureThread);
+  controll.add(madgwickQuaternionThread);
   controll.add(allSensorResultsThread);
 }
 
