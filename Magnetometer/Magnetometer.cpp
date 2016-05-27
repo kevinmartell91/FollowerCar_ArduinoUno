@@ -30,7 +30,7 @@ void Magnetometer::calculateMagnetometerValues(){
 		y |= Wire.read(); //Y lsb
 	}
 
-	delay(250); // TODO : preguntar para o profesor
+	//delay(250); // TODO : preguntar para o profesor
 }
 
 int Magnetometer::setupHMC5883(){

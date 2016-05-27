@@ -7,6 +7,9 @@
 #include "BarometricPressure.h"
 #include "MadgwickQuaternion.h"
 
+#define SENOR_INTERVAL 1000
+#define FILTER_INTERVAL 1000
+
 // ThreadController that will controll all threads of sensors
 ThreadController controll = ThreadController();
 
@@ -25,7 +28,6 @@ BarometricPressure* barometricPressure =  new BarometricPressure();
 
 // Intance of madgwick algorithm
 MadgwickQuaternion* madgwickQuaternion = new MadgwickQuaternion();
-
 
 // callback for myThread
 void accelerometerCallback(){
@@ -46,29 +48,6 @@ void magnetometerCallback(){
 void barometricPressureCallback(){
 
   barometricPressure->calculateBarometricPressureValues();
-
-}
-
-void madgwickQuaternionCallback(){
-  madgwickQuaternion->calculateMadgwickQuaternionValues(
-    accelerometer->getX(),
-    accelerometer->getY(),
-    accelerometer->getZ(),
-    gyroscope->getX(),
-    gyroscope->getY(),
-    gyroscope->getZ(),
-    magnetometer->getX(),
-    magnetometer->getY(),
-    magnetometer->getZ()
-  );
-
-  //Serial.println("===========  madgwick filter  =========");
-  Serial.print("MadgwickQuaternion ( ");
-  Serial.print(madgwickQuaternion->getPitch()); Serial.print(" , ");
-  Serial.print(madgwickQuaternion->getYaw()); Serial.print(" , ");
-  Serial.print(madgwickQuaternion->getRoll()); Serial.print(" ).");
-  Serial.println();
-  Serial.println("-----------------------------------------");
 
 }
 
@@ -95,28 +74,51 @@ void allSensorResultsCallback(){
   Serial.print(magnetometer->getZ());Serial.print(" ).");
   Serial.println();
 
-  //Serial.println("============= barometricPressure  =========");
-  Serial.println("barometricPressure");
-  Serial.print("  Temperatura: ");
-  // Mostra a temperatura com 2 casas decimais
-  Serial.print(barometricPressure->getTemperature(), 2); 
-  Serial.println(" C");
+  // //Serial.println("============= barometricPressure  =========");
+  // Serial.println("barometricPressure");
+  // Serial.print("  Temperatura: ");
+  // // Mostra a temperatura com 2 casas decimais
+  // Serial.print(barometricPressure->getTemperature(), 2); 
+  // Serial.println(" C");
 
-  Serial.print("  Pressao: ");
-  Serial.print(barometricPressure->getPressure()); 
-  Serial.println(" Pa");
+  // Serial.print("  Pressao: ");
+  // Serial.print(barometricPressure->getPressure()); 
+  // Serial.println(" Pa");
 
-  Serial.print("  Atmosfera padrao : ");
-  // Mostra o valor com 4 casas decimais
-  Serial.println(barometricPressure->getAtmosphere(), 4); //display 4 decimal places
+  // Serial.print("  Atmosfera padrao : ");
+  // // Mostra o valor com 4 casas decimais
+  // Serial.println(barometricPressure->getAtmosphere(), 4); //display 4 decimal places
 
-  Serial.print("  Altitude: ");
-  // Mostra o valor com 2 casas decimais
-  Serial.print(barometricPressure->getAltitud(), 2); 
-  Serial.println(" M");
+  // Serial.print("  Altitude: ");
+  // // Mostra o valor com 2 casas decimais
+  // Serial.print(barometricPressure->getAltitud(), 2); 
+  // Serial.println(" M");
+  // Serial.println();
+  // Serial.println("---------------------------------------------");
+  // Serial.println();
+}
+
+void madgwickQuaternionCallback(){
+  madgwickQuaternion->calculateMadgwickQuaternionValues(
+    accelerometer->getX(),
+    accelerometer->getY(),
+    accelerometer->getZ(),
+    gyroscope->getX(),
+    gyroscope->getY(),
+    gyroscope->getZ(),
+    magnetometer->getX(),
+    magnetometer->getY(),
+    magnetometer->getZ()
+  );
+
+  //Serial.println("===========  madgwick filter  =========");
+  Serial.print("MadgwickQuaternion ( ");
+  Serial.print(madgwickQuaternion->getPitch()); Serial.print(" , ");
+  Serial.print(madgwickQuaternion->getYaw()); Serial.print(" , ");
+  Serial.print(madgwickQuaternion->getRoll()); Serial.print(" ).");
   Serial.println();
-  Serial.println("---------------------------------------------");
-  Serial.println();
+  Serial.println("-----------------------------------------");
+
 }
 
 void setup(){
@@ -132,35 +134,34 @@ void setup(){
 
   delay(200);
 
-
   // Configure accelerometroThread
   accelerometroThread->onRun(accelerometerCallback);
-  accelerometroThread->setInterval(500);
+  accelerometroThread->setInterval(SENOR_INTERVAL);
 
   // Configure gyroscopeThread
   gyroscopeThread->onRun(gyroscopeCallback);
-  gyroscopeThread->setInterval(500);
+  gyroscopeThread->setInterval(SENOR_INTERVAL);
 
   // Configurate magnetometerThread
   magnetometerThread->onRun(magnetometerCallback);
-  magnetometerThread->setInterval(500);
+  magnetometerThread->setInterval(SENOR_INTERVAL);
 
   // Configurate barometricPressureThread
   barometricPressureThread->onRun(barometricPressureCallback);
-  barometricPressureThread->setInterval(500);
+  barometricPressureThread->setInterval(SENOR_INTERVAL);
 
   // Configure allSensorResultsThread
   allSensorResultsThread->onRun(allSensorResultsCallback);
-  allSensorResultsThread->setInterval(500);
+  allSensorResultsThread->setInterval(SENOR_INTERVAL);
 
   // Configurate Madgwick algorithm
   madgwickQuaternionThread->onRun(madgwickQuaternionCallback);
-  madgwickQuaternionThread->setInterval(500);
+  madgwickQuaternionThread->setInterval(FILTER_INTERVAL);
 
 
   // Adds both threads to the sensor controllers of threads
   controll.add(accelerometroThread);
-  controll.add(gyroscopeThread); // & to pass the pointer to it
+  controll.add(gyroscopeThread);
   controll.add(magnetometerThread);
   controll.add(barometricPressureThread);
   controll.add(madgwickQuaternionThread);
@@ -172,8 +173,6 @@ void loop(){
   // this will check every thread inside ThreadController,
   // if it should run. If yes, he will run it;
   controll.run();
-  delay(1000);
-
   // Rest of code
  
 }
