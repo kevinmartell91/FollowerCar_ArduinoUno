@@ -7,6 +7,10 @@
 #include "BarometricPressure.h"
 #include "MadgwickQuaternion.h"
 
+#define SENSOR_INTERVAL 200
+#define FILTER_INTERVAL 200
+#define SERIAL_DEBUGER false
+
 // ThreadController that will controll all threads of sensors
 ThreadController controll = ThreadController();
 
@@ -23,76 +27,73 @@ Gyroscope* gyroscope = new Gyroscope();
 Magnetometer* magnetometer = new Magnetometer();
 BarometricPressure* barometricPressure =  new BarometricPressure();
 
+// Global variables
+   float ax ;
+   float ay ;
+   float az ;
+   float gx ;
+   float gy ;
+   float gz ;
+   float mx ;
+   float my ;
+   float mz ;
+
+   uint32_t lastUpdate = 0; // used to calculate integration interval
+   uint32_t Now = 0;        // used to calculate integration interval
+   float deltat = 0;
+   
+
+
 // Intance of madgwick algorithm
 MadgwickQuaternion* madgwickQuaternion = new MadgwickQuaternion();
 
-
-// callback for myThread
 void accelerometerCallback(){
   accelerometer->calculateAccelerometerValues();
-  //Serial.println(millis());
 }
 
 void gyroscopeCallback(){
   gyroscope->calculateGyroscopeValues();
-  
 }
 
 void magnetometerCallback(){
   magnetometer->calculateMagnetometerValues();
-
 }
 
 void barometricPressureCallback(){
-
   barometricPressure->calculateBarometricPressureValues();
-
 }
 
-void madgwickQuaternionCallback(){
-  madgwickQuaternion->calculateMadgwickQuaternionValues(
-    accelerometer->getX(),
-    accelerometer->getY(),
-    accelerometer->getZ(),
-    gyroscope->getX(),
-    gyroscope->getY(),
-    gyroscope->getZ(),
-    magnetometer->getX(),
-    magnetometer->getY(),
-    magnetometer->getZ()
-  );
-
-  //Serial.println("===========  madgwick filter  =========");
-  Serial.print("MadgwickQuaternion ( ");
-  Serial.print(madgwickQuaternion->getPitch()); Serial.print(" , ");
-  Serial.print(madgwickQuaternion->getYaw()); Serial.print(" , ");
-  Serial.print(madgwickQuaternion->getRoll()); Serial.print(" ).");
-  Serial.println();
-  Serial.println("-----------------------------------------");
-
-}
-
-// callback for hisThread
 void allSensorResultsCallback(){
+
+  ax = accelerometer->getX();
+  ay = accelerometer->getY();
+  az = accelerometer->getZ();
+  gx = gyroscope->getX();
+  gy = gyroscope->getY();
+  gz = gyroscope->getZ();
+  mx = magnetometer->getX();
+  my = magnetometer->getY();
+  mz = magnetometer->getZ();
+
   //Serial.println("===========  accelerometer  =========");
   Serial.print("Accelerometer ( ");
-  Serial.print(accelerometer->getX()); Serial.print(" , ");
-  Serial.print(accelerometer->getY()); Serial.print(" , ");
-  Serial.print(accelerometer->getZ()); Serial.print(" ).");
+  Serial.print(ax); Serial.print(" , ");
+  Serial.print(ay); Serial.print(" , ");
+  Serial.print(az); Serial.print(" ).");
   Serial.println();
 
   //Serial.println("============   gyroscope    ==========");
   Serial.print("Gyroscope ( ");
-  Serial.print(gyroscope->getX());Serial.print(" , ");
-  Serial.print(gyroscope->getY());Serial.print(" , ");
-  Serial.print(gyroscope->getZ());Serial.print(" ).");
+  Serial.print(gx);Serial.print(" , ");
+  Serial.print(gy);Serial.print(" , ");
+  Serial.print(gz);Serial.print(" ).");
   Serial.println();
 
   //Serial.println("============= magnetometer  =========");
   Serial.print("Magnetometer ( ");
-  Serial.print(magnetometer->getX());Serial.print(" , ");
-  Serial.print(magnetometer->getY());Serial.print(" , ");
-  Serial.print(magnetometer->getZ());Serial.print(" ).");
+  Serial.print(mx);Serial.print(" , ");
+  Serial.print(my);Serial.print(" , ");
+  Serial.print(mz);Serial.print(" ).");
   Serial.println();
 
   //Serial.println("============= barometricPressure  =========");
@@ -117,6 +118,65 @@ void allSensorResultsCallback(){
   Serial.println();
   Serial.println("---------------------------------------------");
   Serial.println();
+
+}
+
+void madgwickQuaternionCallback(){
+  
+  ax = accelerometer->getX();
+  ay = accelerometer->getY();
+  az = accelerometer->getZ();
+  gx = gyroscope->getX();
+  gy = gyroscope->getY();
+  gz = gyroscope->getZ();
+  mx = magnetometer->getX();
+  my = magnetometer->getY();
+  mz = magnetometer->getZ();
+
+  //Serial.println("===========  accelerometer  =========");
+  Serial.print("Accelerometer ( ");
+  Serial.print(ax); Serial.print(" , ");
+  Serial.print(ay); Serial.print(" , ");
+  Serial.print(az); Serial.print(" ).");
+  Serial.println();
+
+  //Serial.println("============   gyroscope    ==========");
+  Serial.print("Gyroscope ( ");
+  Serial.print(gx);Serial.print(" , ");
+  Serial.print(gy);Serial.print(" , ");
+  Serial.print(gz);Serial.print(" ).");
+  Serial.println();
+
+  //Serial.println("============= magnetometer  =========");
+  Serial.print("Magnetometer ( ");
+  Serial.print(mx);Serial.print(" , ");
+  Serial.print(my);Serial.print(" , ");
+  Serial.print(mz);Serial.print(" ).");
+  Serial.println();
+
+  Now = micros();
+  deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+  lastUpdate = Now;
+
+  //Serial.print(" Deltat => ");Serial.print(deltat); 
+
+  madgwickQuaternion->setDeltat(deltat);
+  madgwickQuaternion->setSerialDebug(SERIAL_DEBUGER);
+
+  madgwickQuaternion->calculateMadgwickQuaternionValues(
+    //300,300,300,300,300,300,300,300,300
+    ax,ay,az,gx,gy,gz,mx,my,mz
+  );
+
+  //Serial.println("===========  madgwick filter  =========");
+  Serial.print("MadgwickQuaternion ( ");
+  Serial.print(madgwickQuaternion->getPitch()); Serial.print(" , ");
+  Serial.print(madgwickQuaternion->getYaw()); Serial.print(" , ");
+  Serial.print(madgwickQuaternion->getRoll()); Serial.print(" ).");
+  Serial.println();
+  Serial.println("-----------------------------------------------------");
+  Serial.println("-----------------------------------------------------");
+
 }
 
 void setup(){
@@ -126,45 +186,44 @@ void setup(){
   delay(100);
 
   accelerometer->setupADXL345();
-  gyroscope->setupL3G4200D(2000); // Configure L3G4200  - 250, 500 or 2000 deg/sec
+  gyroscope->setupL3G4200D(250); // Configure L3G4200  - 250, 500 or 2000 deg/sec
   magnetometer->setupHMC5883();
   barometricPressure->setupBMP085Calibration();
 
   delay(200);
 
-
   // Configure accelerometroThread
   accelerometroThread->onRun(accelerometerCallback);
-  accelerometroThread->setInterval(500);
+  accelerometroThread->setInterval(SENSOR_INTERVAL);
 
   // Configure gyroscopeThread
   gyroscopeThread->onRun(gyroscopeCallback);
-  gyroscopeThread->setInterval(500);
+  gyroscopeThread->setInterval(SENSOR_INTERVAL);
 
   // Configurate magnetometerThread
   magnetometerThread->onRun(magnetometerCallback);
-  magnetometerThread->setInterval(500);
+  magnetometerThread->setInterval(SENSOR_INTERVAL);
 
   // Configurate barometricPressureThread
   barometricPressureThread->onRun(barometricPressureCallback);
-  barometricPressureThread->setInterval(500);
+  barometricPressureThread->setInterval(SENSOR_INTERVAL);
 
   // Configure allSensorResultsThread
-  allSensorResultsThread->onRun(allSensorResultsCallback);
-  allSensorResultsThread->setInterval(500);
+  // allSensorResultsThread->onRun(allSensorResultsCallback);
+  // allSensorResultsThread->setInterval(SENSOR_INTERVAL);
 
   // Configurate Madgwick algorithm
   madgwickQuaternionThread->onRun(madgwickQuaternionCallback);
-  madgwickQuaternionThread->setInterval(500);
+  madgwickQuaternionThread->setInterval(FILTER_INTERVAL);
 
 
   // Adds both threads to the sensor controllers of threads
   controll.add(accelerometroThread);
-  controll.add(gyroscopeThread); // & to pass the pointer to it
+  controll.add(gyroscopeThread);
   controll.add(magnetometerThread);
   controll.add(barometricPressureThread);
   controll.add(madgwickQuaternionThread);
-  controll.add(allSensorResultsThread);
+  //controll.add(allSensorResultsThread);
 }
 
 void loop(){
@@ -172,8 +231,6 @@ void loop(){
   // this will check every thread inside ThreadController,
   // if it should run. If yes, he will run it;
   controll.run();
-  delay(1000);
-
   // Rest of code
  
 }

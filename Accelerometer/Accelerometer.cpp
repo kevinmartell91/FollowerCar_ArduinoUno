@@ -65,7 +65,7 @@ void Accelerometer::calculateAccelerometerValues(){
 	  Xg=X_out/256.0;
 	  Yg=Y_out/256.0;
 	  Zg=Z_out/256.0;
-	  delay(200); // TODO : pregunta para o profesor
+	  //delay(200); // TODO : pregunta para o profesor
 }
 
 double Accelerometer::getX(){

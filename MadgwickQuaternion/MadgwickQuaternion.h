@@ -17,6 +17,9 @@ class MadgwickQuaternion
       float getPitch();
       float getYaw();
       float getRoll();
+      void setDeltat(float deltat_time);
+      void setSerialDebug(bool debug);
+
 
   private:
       // global constants for 9 DoF fusion and AHRS (Attitude and Heading Reference System)
@@ -36,6 +39,9 @@ class MadgwickQuaternion
       float deltat;        // integration interval for both filter schemes
       float ax, ay, az, gx, gy, gz, mx, my, mz; // variables to hold latest sensor data values 
       float q[4] ;    // vector to hold quaternion
+      
+      bool serialDebug;
+
 };
 
 #endif
